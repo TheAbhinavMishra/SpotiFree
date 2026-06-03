@@ -65,7 +65,7 @@ export default function PlayerBar() {
     setIsMounted(true);
   }, []);
 
-  // Fetch lyrics from LRCLIB
+  // Fetch lyrics from Internet Archive OR LRCLIB
   useEffect(() => {
     if (!currentSong) {
       setLyricsLines([]);
@@ -82,6 +82,33 @@ export default function PlayerBar() {
       setPlainLyrics(null);
 
       try {
+        // --- NEW LOGIC: 1. PRIMARY INTERNET ARCHIVE FETCH ---
+        const audioUrl = currentSong.url || currentSong.audioUrl || '';
+        if (audioUrl && typeof audioUrl === 'string') {
+          // Swap the exact extension (e.g., .mp3) for .lrc
+          const lastDotIndex = audioUrl.lastIndexOf('.');
+          if (lastDotIndex !== -1) {
+            const lrcUrl = audioUrl.substring(0, lastDotIndex) + '.lrc';
+            try {
+              const iaRes = await fetch(lrcUrl);
+              if (iaRes.ok) {
+                const iaText = await iaRes.text();
+                // Validate that the file contains actual LRC timestamps
+                if (active && iaText && iaText.includes('[00:')) {
+                  setLyricsLines(parseLRC(iaText));
+                  setIsLyricsLoading(false);
+                  return; // 🚀 Success! Exit early, bypass LRCLIB entirely.
+                }
+              }
+            } catch (iaErr) {
+              // Silently ignore IA fetch failure and allow fallback
+              console.log('Custom .lrc not found, falling back to LRCLIB...');
+            }
+          }
+        }
+        // --- END NEW LOGIC ---
+
+        // --- 2. FALLBACK LOGIC: LRCLIB API ---
         const slicedTitle = (currentSong as any).Title || currentSong.title;
         const slicedSinger = (currentSong as any).Singer || currentSong.artist;
 
@@ -93,7 +120,6 @@ export default function PlayerBar() {
           url += `&album_name=${encodeURIComponent(currentSong.album)}`;
         }
         
-        // Convert display duration string (like '6:12') or number (like 258) to seconds
         let durationSecs = 0;
         if (currentSong.duration) {
           if (typeof currentSong.duration === 'number') {
@@ -110,7 +136,6 @@ export default function PlayerBar() {
         if (!active) return;
 
         if (res.status === 404) {
-          // If direct API lookup returns 404, query search results with full combined query
           const searchQueryString = encodeURIComponent(`${slicedTitle} ${slicedSinger}`);
           const searchRes = await fetch(`https://lrclib.net/api/search?q=${searchQueryString}`);
           if (searchRes.ok) {
@@ -148,7 +173,6 @@ export default function PlayerBar() {
       } catch (err: any) {
         if (active) {
           setLyricsError(err.message || 'Error occurred querying LRCLIB');
-          // Display the error banner only on real API network failures, not just missing lyrics (404)
           if (err.message !== 'No lyrics available on LRCLIB' && err.message !== 'Lyrics matching search record are empty' && err.message !== 'Song lyrics record is empty') {
             setAudioError('Error 404: The beat dropped TOO HARD and we Lost It. Try again later');
           }
@@ -196,17 +220,14 @@ export default function PlayerBar() {
     if (!currentSong || !audioRef.current?.src) return;
     const errorObj = audioRef.current?.error;
     
-    // MEDIA_ERR_ABORTED (1) fires if fetching process is aborted by user (like pausing early)
     if (errorObj && errorObj.code === 1) return;
 
     console.error('Audio load error occurred:', errorObj);
     
-    // Set exact error banner message as requested
     setAudioError('Error 404: The beat dropped TOO HARD and we Lost It. Try again later');
     setIsPlaying(false);
   };
 
-  // Consolidated Audio Controller effect to handle play, pause, source shifting & autoplay guidelines safely
   useEffect(() => {
     if (!audioRef.current) return;
 
@@ -243,13 +264,11 @@ export default function PlayerBar() {
     }
   }, [currentSong, isPlaying, setIsPlaying]);
 
-  // Handle Volume
   useEffect(() => {
     if (!audioRef.current) return;
     audioRef.current.volume = isMuted ? 0 : volume;
   }, [volume, isMuted]);
 
-  // Format Helper e.g. 125 -> 2:05
   const formatTime = (timeInSecs: number) => {
     if (isNaN(timeInSecs)) return '0:00';
     const mins = Math.floor(timeInSecs / 60);
@@ -297,7 +316,6 @@ export default function PlayerBar() {
 
   return (
     <>
-      {/* Error Banner with requested text */}
       <AnimatePresence>
         {audioError && (
           <motion.div
@@ -337,7 +355,6 @@ export default function PlayerBar() {
         onClick={() => currentSong && setIsFullScreenOpen(true)}
         className="h-32 bg-[#121212]/95 backdrop-blur-md border-t border-neutral-800/80 flex flex-col justify-between py-3.5 px-6 md:px-16 lg:px-20 select-none fixed bottom-0 left-0 right-0 z-40 text-white font-sans shadow-2xl cursor-pointer hover:bg-white/5 transition-colors"
       >
-        {/* Invisible HTML5 Audio Hook */}
         <audio
           ref={audioRef}
           onTimeUpdate={handleTimeUpdate}
@@ -346,7 +363,6 @@ export default function PlayerBar() {
           onError={handleAudioError}
         />
 
-        {/* Row 1: Song Name in bold & its metadata with it in slightly thin text from left to right in straight line */}
         <div id="player-top-line" className="flex items-center justify-between w-full min-w-0 border-b border-neutral-800/20 pb-1">
           <div className="flex items-center gap-2.5 truncate min-w-0 flex-1">
             {currentSong ? (
@@ -373,7 +389,6 @@ export default function PlayerBar() {
             )}
           </div>
 
-          {/* Shuffle & Repeat / Extra Accessories */}
           <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
             <button
               id="player-shuffle"
@@ -405,7 +420,6 @@ export default function PlayerBar() {
           </div>
         </div>
 
-        {/* Row 2: In between elapsed trackers and the song name must lie the play/pause button and next and previous buttons */}
         <div id="player-middle-line" className="flex items-center justify-center gap-6 my-0.5">
           <button
             id="player-prev"
@@ -453,9 +467,7 @@ export default function PlayerBar() {
           </button>
         </div>
 
-        {/* Row 3: Elapsed tracker must stretch from left all towards the right leaving enough space for volume bar */}
         <div id="player-bottom-line" className="flex items-center justify-between gap-4 md:gap-10 w-full mb-0.5">
-          {/* Extended progress tracker */}
           <div id="player-progress-bar-wrapper" className="flex-1 flex items-center gap-2 md:gap-3 text-neutral-400 min-w-0">
             <span className="w-6 md:w-8 text-right font-mono text-[9px] md:text-[11px] select-none text-neutral-500">
               {formatTime(currentTime)}
@@ -481,7 +493,6 @@ export default function PlayerBar() {
             </span>
           </div>
 
-          {/* Volume toggling control slider on the far right */}
           <div id="player-accessories-volume" className="flex items-center gap-2 md:gap-3 flex-shrink-0 w-24 md:w-36">
             <button
               id="player-volume-mute"
@@ -526,7 +537,6 @@ export default function PlayerBar() {
         </div>
       </footer>
 
-      {/* FULL SCREEN PLAYER INTERFACE OVERLAY */}
       {isMounted && typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {isFullScreenOpen && currentSong && (
@@ -536,15 +546,12 @@ export default function PlayerBar() {
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 26, stiffness: 210 }}
               className="fixed inset-0 z-50 bg-[#070707]/95 backdrop-blur-2xl flex flex-col font-sans text-white select-none overflow-hidden"
-              onClick={(e) => e.stopPropagation()} // Stop propagation
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Soft Ambient glowing background matching play status */}
               <div className="absolute inset-x-0 top-0 h-96 bg-gradient-to-b from-[#1DB954]/15 to-transparent pointer-events-none" />
 
-              {/* Container */}
               <div className="max-w-2xl mx-auto w-full h-full flex flex-col py-6 px-6 md:px-10 justify-between relative overflow-y-auto">
                 
-                {/* Header */}
                 <div className="flex items-center justify-between w-full pb-4">
                   <button 
                     onClick={() => setIsFullScreenOpen(false)}
@@ -556,10 +563,9 @@ export default function PlayerBar() {
                   <span className="text-xs uppercase font-extrabold tracking-widest text-[#1DB954]">
                     Now Playing Overlay
                   </span>
-                  <div className="w-10 h-10" /> {/* Spacer */}
+                  <div className="w-10 h-10" />
                 </div>
 
-                {/* Album Art Section (Top center, maintaining native aspect ratio, is large) */}
                 <div className="flex-1 flex flex-col justify-center items-center py-4">
                   <div className="relative group shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] rounded-2xl overflow-hidden aspect-square h-[190px] w-[190px] sm:h-[260px] sm:w-[260px] md:h-[300px] md:w-[300px] max-h-[35vh]">
                     <Artwork 
@@ -573,9 +579,7 @@ export default function PlayerBar() {
                   </div>
                 </div>
 
-                {/* Song Details Area: Below the album art, details on left, horizontal volume bar with speaker icons on right */}
                 <div className="flex items-center justify-between gap-6 w-full mt-4">
-                  {/* Left Side Details */}
                   <div className="min-w-0 flex-1">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight truncate leading-tight">
                       {currentSong.title}
@@ -585,7 +589,6 @@ export default function PlayerBar() {
                     </p>
                   </div>
 
-                  {/* Right Side Volume Bar */}
                   <div className="flex items-center gap-2 flex-shrink-0 bg-neutral-900/80 px-3 py-2 rounded-full border border-neutral-800">
                     <button
                       onClick={toggleMute}
@@ -614,7 +617,6 @@ export default function PlayerBar() {
                   </div>
                 </div>
 
-                {/* Elapsed Tracker: Runs across the screen leaving only consistent small space on both sides */}
                 <div className="w-full mt-5">
                   <input
                     type="range"
@@ -630,7 +632,6 @@ export default function PlayerBar() {
                   </div>
                 </div>
 
-                {/* Embedded Player controls inside the overlay for absolute usability */}
                 <div className="flex items-center justify-center gap-8 my-5">
                   <button
                     onClick={prevSong}
@@ -663,7 +664,6 @@ export default function PlayerBar() {
                   </button>
                 </div>
 
-                {/* Lyrics Section */}
                 <div className="w-full mt-2">
                   <h3 className="text-xs font-bold tracking-widest text-neutral-400 uppercase mb-2">
                     Lyrics
@@ -694,7 +694,6 @@ export default function PlayerBar() {
 
               </div>
 
-              {/* FULL SCREEN LYRICS OVERLAY */}
               <AnimatePresence>
                 {isLyricsFullScreen && (
                   <motion.div
@@ -704,11 +703,9 @@ export default function PlayerBar() {
                     onClick={() => setIsLyricsFullScreen(false)}
                     className="absolute inset-0 z-50 bg-[#090909]/95 backdrop-blur-2xl flex flex-col py-10 px-8 cursor-pointer select-none text-white overflow-hidden"
                   >
-                    {/* Subtle color highlight in custom background container */}
                     <div className="absolute inset-0 bg-gradient-to-b from-[#1DB954]/15 via-transparent to-black/80 pointer-events-none" />
 
                     <div className="max-w-2xl mx-auto w-full h-full flex flex-col justify-between relative" onClick={(e) => e.stopPropagation()}>
-                      {/* Header */}
                       <div className="flex items-center justify-between pb-6 border-b border-white/5">
                         <div>
                           <h4 className="text-xs uppercase font-extrabold tracking-widest text-[#1DB954]">Lyrics Overlay</h4>
@@ -722,10 +719,9 @@ export default function PlayerBar() {
                         </button>
                       </div>
 
-                      {/* Scrollable lyrics core */}
                       <div 
                         className="flex-1 overflow-y-auto my-6 px-4 custom-scrollbar text-center flex flex-col gap-4 py-8"
-                        onClick={(e) => e.stopPropagation()} // don't close screen when interacting with lyrics list
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {isLyricsLoading ? (
                           <div className="flex-1 flex flex-col items-center justify-center text-neutral-400 gap-3">
@@ -769,7 +765,6 @@ export default function PlayerBar() {
                         )}
                       </div>
 
-                      {/* Bottom Metadata */}
                       <div className="text-center text-xs text-neutral-500 font-medium">
                         Listening to {currentSong.title} &bull; {currentSong.artist}
                       </div>
