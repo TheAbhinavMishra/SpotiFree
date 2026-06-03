@@ -12,7 +12,7 @@
 
 ### 🚀 Live Deployment
 Experience the fully responsive layout live on production:  
-🔗 **[https://your-url.vercel.app](https://spotifree-web.vercel.app)**
+🔗 **[https://spotifree-web.vercel.app](https://spotifree-web.vercel.app)**
 
 ---
 
@@ -62,3 +62,10 @@ spotifree/
 │   └── index.css           # Global core styles
 ├── package.json            # Module dependencies
 └── tsconfig.json           # Explicit TypeScript declarations
+```
+## 📖 ⚙️ Environment Configuration
+The application reads dynamic collection endpoints out of environmental flags. To launch your own instance locally or via cloud deployment pipelines, ensure your configuration contains:
+         VITE_ARCHIVE_IDENTIFIER=your_internet_archive_collection_id
+
+## 📖 License
+Distributed under the MIT License. See the LICENSE file in the root directory for more information.
