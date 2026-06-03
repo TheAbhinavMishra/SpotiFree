@@ -1,0 +1,6 @@
+{
+  "name": "SpotiFree Player",
+  "description": "A responsive SpotiFree player with timed Lyrics, Custom Playlist Management, Search filter, Liked songs, Persistent storage, and Last.fm dynamic album art fetching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
