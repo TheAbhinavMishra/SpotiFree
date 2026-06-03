@@ -90,7 +90,8 @@ export default function PlayerBar() {
           if (lastDotIndex !== -1) {
             const lrcUrl = audioUrl.substring(0, lastDotIndex) + '.lrc';
             try {
-              const iaRes = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(lrcUrl)}`);
+              const proxyUrl = lrcUrl.replace("https://archive.org/", "/ia-proxy/");
+              const iaRes = await fetch(proxyUrl);
               if (iaRes.ok) {
                 const iaText = await iaRes.text();
                 // Validate that the file contains actual LRC timestamps
