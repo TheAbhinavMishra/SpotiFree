@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/ia-proxy/:path*",
+      "destination": "https://archive.org/:path*"
+    }
+  ]
+}
