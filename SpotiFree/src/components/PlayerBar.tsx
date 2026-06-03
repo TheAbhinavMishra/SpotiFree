@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
-  Repeat, Shuffle, Maximize2, Headphones, ChevronDown, AlertCircle, X
+  Repeat, Shuffle, Maximize2, Headphones, ChevronDown, AlertCircle, X, Rewind, FastForward
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store';
@@ -313,6 +313,22 @@ export default function PlayerBar() {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
+  };
+  
+  const skipBackward = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    const newTime = Math.max(audioRef.current.currentTime - 5, 0);
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const skipForward = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    const newTime = Math.min(audioRef.current.currentTime + 5, duration || 0);
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
   };
 
   return (
@@ -633,19 +649,29 @@ export default function PlayerBar() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-8 my-5">
+                {/* Embedded Player controls inside the overlay for absolute usability */}
+                <div className="flex items-center justify-center gap-4 sm:gap-6 md:gap-8 my-5">
                   <button
                     onClick={prevSong}
                     className="text-neutral-400 hover:text-white active:scale-90 transition-all p-2 rounded-full hover:bg-white/5"
                     disabled={playbackQueue.length === 0}
                     title="Previous Track"
                   >
-                    <SkipBack className="w-6 h-6 fill-neutral-400 hover:fill-white" />
+                    <SkipBack className="w-5 h-5 sm:w-6 sm:h-6 fill-neutral-400 hover:fill-white" />
+                  </button>
+
+                  <button
+                    onClick={skipBackward}
+                    className="text-neutral-400 hover:text-white active:scale-90 transition-all p-2 rounded-full hover:bg-white/5"
+                    disabled={!currentSong}
+                    title="Rewind 5s"
+                  >
+                    <Rewind className="w-5 h-5 sm:w-6 sm:h-6 fill-neutral-400 hover:fill-white" />
                   </button>
 
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all text-black hover:bg-neutral-200 shadow-lg"
+                    className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all text-black hover:bg-neutral-200 shadow-lg flex-shrink-0"
                     title={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
@@ -656,12 +682,21 @@ export default function PlayerBar() {
                   </button>
 
                   <button
+                    onClick={skipForward}
+                    className="text-neutral-400 hover:text-white active:scale-90 transition-all p-2 rounded-full hover:bg-white/5"
+                    disabled={!currentSong}
+                    title="Fast Forward 5s"
+                  >
+                    <FastForward className="w-5 h-5 sm:w-6 sm:h-6 fill-neutral-400 hover:fill-white" />
+                  </button>
+
+                  <button
                     onClick={nextSong}
                     className="text-neutral-400 hover:text-white active:scale-90 transition-all p-2 rounded-full hover:bg-white/5"
                     disabled={playbackQueue.length === 0}
                     title="Next Track"
                   >
-                    <SkipForward className="w-6 h-6 fill-neutral-400 hover:fill-white" />
+                    <SkipForward className="w-5 h-5 sm:w-6 sm:h-6 fill-neutral-400 hover:fill-white" />
                   </button>
                 </div>
 
