@@ -196,7 +196,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             .replaceAll('%2C', ',')
             .replaceAll('%20', ' ');
 
-          const finalLrcUrl = "https://raw.githubusercontent.com/" + yourGithubUser + "/" + yourRepo + "/main/" + encodedName + ".lrc";
+          const finalLrcUrl = "https://raw.githubusercontent.com/" + yourGithubUser + "/" + yourRepo + "/refs/heads/main/SpotiFree/" + encodedName + ".lrc";
           return {
             id: "archive_track_" + index,
             title: title,
