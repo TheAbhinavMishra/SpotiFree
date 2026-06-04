@@ -45,7 +45,7 @@ export default function Artwork({
           artist: artist || ''
         };
         const query = `${track.title} ${track.artist}`.trim() || album;
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`;
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&country=in&limit=1`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error('iTunes Search API request failed');
