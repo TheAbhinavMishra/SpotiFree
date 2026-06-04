@@ -85,13 +85,22 @@ export default function PlayerBar() {
         // --- NEW LOGIC: 1. PRIMARY INTERNET ARCHIVE FETCH ---
         const audioUrl = currentSong.url || currentSong.audioUrl || '';
         if (audioUrl && typeof audioUrl === 'string') {
-          // Swap the exact extension (e.g., .mp3) for .lrc
-          const lastDotIndex = audioUrl.lastIndexOf('.');
-          if (lastDotIndex !== -1) {
-            const lrcUrl = audioUrl.substring(0, lastDotIndex) + '.lrc';
+          
+          // 1. Check if a custom lyric URL exists; otherwise, fall back to building it from the audio URL
+          const lrcUrl = currentSong?.lrcUrl || (
+            audioUrl.lastIndexOf('.') !== -1 
+              ? audioUrl.substring(0, audioUrl.lastIndexOf('.')) + '.lrc' 
+              : ''
+          );
+
+          if (lrcUrl) {
             try {
-              const proxyUrl = lrcUrl.replace("https://archive.org/", "/ia-proxy/");
-              const iaRes = await fetch(proxyUrl);
+              // 2. Only use the proxy tunnel if the URL points to the Internet Archive
+              const finalUrl = lrcUrl.includes("githubusercontent.com") 
+                ? lrcUrl 
+                : lrcUrl.replace("https://archive.org/", "/ia-proxy/");
+
+              const iaRes = await fetch(finalUrl);
               if (iaRes.ok) {
                 const iaText = await iaRes.text();
                 // Validate that the file contains actual LRC timestamps
