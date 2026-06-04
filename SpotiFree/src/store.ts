@@ -190,8 +190,13 @@ export const useAppStore = create<AppState>((set, get) => ({
           // AUTOMATED GITHUB LRC CONFIGURATION
           const yourGithubUser = "TheAbhinavMishra";
           const yourRepo = "SpotiFree";
-          const finalLrcUrl = "https://raw.githubusercontent.com/" + yourGithubUser + "/" + yourRepo + "/main/" + encodeURIComponent(nameWithoutExt) + ".lrc";
 
+          // Clean up encoding so GitHub raw server doesn't throw a 404
+          const encodedName = encodeURIComponent(nameWithoutExt)
+            .replaceAll('%2C', ',')
+            .replaceAll('%20', ' ');
+
+          const finalLrcUrl = "https://raw.githubusercontent.com/" + yourGithubUser + "/" + yourRepo + "/main/" + encodedName + ".lrc";
           return {
             id: "archive_track_" + index,
             title: title,
