@@ -95,7 +95,7 @@ export default function PlayerBar() {
               if (iaRes.ok) {
                 const iaText = await iaRes.text();
                 // Validate that the file contains actual LRC timestamps
-                if (active && iaText && iaText.includes('[00:')) {
+                if (active && iaText && (iaText.includes('[00:') || /\[\d{2}:/.test(iaText))) {
                   setLyricsLines(parseLRC(iaText));
                   setIsLyricsLoading(false);
                   return; // 🚀 Success! Exit early, bypass LRCLIB entirely.
