@@ -166,15 +166,12 @@ export const useAppStore = create<AppState>((set, get) => ({
           return fileName.toLowerCase().endsWith('.mp3');
         });
 
-        // Map over these MP3s and dynamically build the track objects
+       // Map over these MP3s and dynamically build the track objects
         const parsedSongs: Song[] = mp3Files.map((file: any, index: number) => {
           const rawFilename = file.name;
           const nameWithoutExt = rawFilename.replace(/\.mp3$/i, '');
           const lengthSecs = file.length ? parseFloat(file.length) : 0;
 
-          // Split the 'name' string at the first hyphen (' - ')
-          // Substring BEFORE hyphen -> title
-          // Substring AFTER hyphen (removing trailing .mp3) -> artist
           let title = nameWithoutExt;
           let artist = 'Unknown Artist';
 
@@ -188,17 +185,23 @@ export const useAppStore = create<AppState>((set, get) => ({
             artist = parts.slice(1).join('-').trim();
           }
 
-          const finalAudioUrl = `https://archive.org/download/${identifierToUse}/${encodeURIComponent(rawFilename)}`;
+          const finalAudioUrl = "https://archive.org/download/" + identifierToUse + "/" + encodeURIComponent(rawFilename);
+
+          // AUTOMATED GITHUB LRC CONFIGURATION
+          const yourGithubUser = "TheAbhinavMishra";
+          const yourRepo = "SpotiFree";
+          const finalLrcUrl = "https://raw.githubusercontent.com/" + yourGithubUser + "/" + yourRepo + "/main/" + encodeURIComponent(nameWithoutExt) + ".lrc";
 
           return {
-            id: `archive_track_${index}`,
+            id: "archive_track_" + index,
             title: title,
             artist: artist,
-            Singer: artist, // assign dynamically for compatibility
-            Title: title,   // assign dynamically for compatibility
+            Singer: artist, 
+            Title: title,   
             album: 'Internet Archive Item',
             url: finalAudioUrl,
             audioUrl: finalAudioUrl,
+            lrcUrl: finalLrcUrl, 
             coverUrl: undefined,
             duration: lengthSecs,
           } as any;
