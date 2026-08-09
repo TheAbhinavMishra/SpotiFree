@@ -1,4 +1,8 @@
 # SpotiFree Web Player
+<p align="center">
+  <img src="SpotiFree/SpotiFree/public/logo.svg" alt="SpotiFree Logo" width="120">
+</p>
+
 
 A lightweight, high-performance music streaming player designed to run completely at the edge. By separating heavy audio file delivery from lyric data, SpotiFree achieves smooth, fast playback and completely bypasses common cloud storage or hosting limits (such as body size restrictions) without costing a dime in operational overhead.
 
