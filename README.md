@@ -1,6 +1,6 @@
 # SpotiFree Web Player
 <p align="center">
-  <img src="SpotiFree/SpotiFree/public/logo.svg" alt="SpotiFree Logo" width="120">
+  <img src="SpotiFree/public/logo.svg"  width="120">
 </p>
 
 
